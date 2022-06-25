@@ -198,6 +198,25 @@ nginx1 | CHANGED => {
 ```
 
 # Homework
+Создадим конфигурационный файл jinja2: nano nginx.conf.j2
+```
+events {
+    worker_connections 1024;
+}
+
+http {
+    server {
+        listen       {{ nginx_listen_port }} default_server;
+        server_name  default_server;
+        root         /usr/share/nginx/html;
+
+        location / {
+        }
+    }
+}
+
+
+```
 
 Создадим плейбук roles_nginx.yml 
 ```
@@ -296,10 +315,8 @@ http://192.168.56.22:8080/
 
 Для создания роли
 ```
-ansible-galaxy init nginx
+ansible-galaxy init roles_nginx
 ```
-Получим подобный каталог папок и файлов (лишнее потом удалим)
-![Image alt](https://github.com/Edo1993/otus_10/raw/master/114.png)
 
 Распиливаем наш playbook, перемещая всё по соответствующим директориям.
  - 1 В раздел handlers - перемещаем всё из блока handlers в playbook (самом playbook перенесёное выпиливаем - справедливо и для всего нижеследующего).
@@ -377,7 +394,7 @@ ansible-galaxy init nginx
   tags:
     - nginx-configuration
 ```
- - 3 В раздел ```templates``` перенесла содержимое текущего ```templates```, выпилив существующую директорию.
+ - 3 В раздел ```templates``` переносим  конфигурационный файл nginx.conf.j2
  - 4 Раздел ```vars```
 ```
 ---
@@ -385,7 +402,7 @@ ansible-galaxy init nginx
 nginx_listen_port: 8080
 ```
 
-Остальные директории были удалены. Playbook принял следующий вид :
+Playbook принял следующий вид:
 ```
 ---
 - name: NGINX | Install and configure NGINX
@@ -393,14 +410,22 @@ nginx_listen_port: 8080
   become: true
 
   roles:
-    - nginx
+    - roles_nginx
 ```
 
-(Если честно - то после создания каталога ролей я пошла спать, и на следующий день у меня нихрена не работало. Провозившись 2 часа стало понятно, что после рестарта вм изменили порты. Вылечилось простым изменением портов в inventory-файле. Для проверки - позвать ```vagrant ssh-config``` и проверить, что вывод совпадает с содержимым inventory)
+Для проверки ДЗ необходимо сделать следующие шаги:
+```
+git clone git@github.com:evgeniy-romanov/hw11.git
+cd ~/hw11/
+vagrant up
+cd ~/hw11/ansible
+vagrant ssh-config
+nano hosts
+Поменять здесь ansible_private_key_file из команды vagrant ssh-config
+ansible all -m ping
+ansible-playbook roles_nginx.yml
+После установки проверяем в браузере:
+http://192.168.56.21:8080/
+http://192.168.56.22:8080/
+```
 
-Каталог с ролями должен лежать в той же директории, что и playbook - иначе у меня не стартануло.
-
-Запускаем playbook, чтобы проверить, что всё работает
-![Image alt](https://github.com/Edo1993/otus_10/raw/master/115.png)
-
-Итого - всё это хозяйство с ролью лежит [здесь](https://github.com/Edo1993/otus_10/tree/master/2_part)
